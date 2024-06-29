@@ -1,51 +1,78 @@
+const { Client, GatewayIntentBits, REST, Routes } = require('discord.js');
 const dotenv = require('dotenv');
-const { Client, GatewayIntentBits } = require('discord.js');
 
 dotenv.config();
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
-client.login(process.env.DISCORD_TOKEN);
-prefix = '!';
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const prefix = '/';
 
-// When the bot is ready, log to the console
-client.once('ready', () => {
-    console.log(`Bot is online! And logged in as ${client.user.tag}!`);
-});
+client.once('ready', async () => {
+    console.log(`Bot is online! Logged in as ${client.user.tag}!`);
 
-// If ping is sent, reply with pong
-client.on('messageCreate', message => {
-    if (message.content === `${prefix}ping`) {
-        message.channel.send('pong');
+    const commands = [
+        {
+            name: 'ping',
+            description: 'Ping the bot',
+        },
+        {
+            name: 'nee',
+            description: 'Respond with nee',
+        },
+        {
+            name: 'pyramid',
+            description: 'Create a pyramid with the specified size and block',
+            options: [
+                {
+                    name: 'size',
+                    type: 4, // INTEGER
+                    description: 'Size of the pyramid',
+                    required: true,
+                },
+                {
+                    name: 'block',
+                    type: 3, // STRING
+                    description: 'Building block for the pyramid',
+                    required: true,
+                },
+            ],
+        },
+    ];
+
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+
+    try {
+        await rest.put(
+            Routes.applicationGuildCommands(client.user.id, process.env.GUILD_ID),
+            { body: commands },
+        );
+        console.log('Successfully registered application commands.');
+    } catch (error) {
+        console.error(error);
     }
 });
 
-// If someone says nee reply with nee 
-client.on('messageCreate', message => {
-    if (message.author.bot) return;
-    if (message.content === `${prefix}nee`) {
-      message.reply('nee');
-    }
-});
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand()) return;
 
+    const { commandName, options } = interaction;
 
+    if (commandName === 'ping') {
+        await interaction.reply('pong');
+    } else if (commandName === 'nee') {
+        await interaction.reply('nee');
+    } else if (commandName === 'pyramid') {
+        const size = options.getInteger('size');
+        const block = options.getString('block');
 
-// if somone runs the command !pyramid 5, it will return a pyramid with 5 rows
-client.on('messageCreate', message => {
-    if (message.content.startsWith(`${prefix}pyramid`)) {
-        const args = message.content.split(' ');
-        const size = parseInt(args[1]);
-        const block = args[2] || '#';
-
-        if (!size || size <= 0) {
-            return message.channel.send('Please provide a valid positive number for the pyramid size.');
+        if (size <= 0) {
+            return interaction.reply('Please provide a valid positive number for the pyramid size.()');
         }
 
         let pyramid = '';
         for (let i = 1; i <= size; i++) {
-            pyramid += ' '.repeat(size - i) + block.repeat(i * 2 - 1) + '\n';
+            pyramid += `${block.repeat(i)}\n`;
         }
 
-       //message.channel.send(`\`\`\`${pyramid}\`\`\``);
-       message.channel.send(pyramid);
+        await interaction.reply(pyramid);
     }
 });
 
