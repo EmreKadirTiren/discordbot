@@ -33,6 +33,7 @@ client.on('messageCreate', message => {
     if (message.content.startsWith(`${prefix}pyramid`)) {
         const args = message.content.split(' ');
         const size = parseInt(args[1]);
+        const block = args[2] || '#';
 
         if (!size || size <= 0) {
             return message.channel.send('Please provide a valid positive number for the pyramid size.');
@@ -40,11 +41,11 @@ client.on('messageCreate', message => {
 
         let pyramid = '';
         for (let i = 1; i <= size; i++) {
-            pyramid += ' '.repeat(size - i) + `#`.repeat(i * 2 - 1) + '\n';
+            pyramid += ' '.repeat(size - i) + block.repeat(i * 2 - 1) + '\n';
         }
 
-       message.channel.send(`\`\`\`${pyramid}\`\`\``);
-       //message.channel.send(pyramid);
+       //message.channel.send(`\`\`\`${pyramid}\`\`\``);
+       message.channel.send(pyramid);
     }
 });
 
